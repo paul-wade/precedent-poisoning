@@ -78,8 +78,15 @@ Each trial records the files it read before its first write. Splitting the
 p=0.012. The same split in the `docs` arm is 3/10 against 5/15, which is
 not significant. In `eslint` it is 0/19 and 0/6.
 
-7 of 25 ungated trials found a compliant example. Nothing in the task points
-at one.
+7 of 25 ungated trials found a compliant example.
+
+Five of those seven are `jwt-issuer`, whose prompt opens "The service reads
+runtime configuration from environment variables in `src/config/`" - the
+directory holding both the stale file and the clean one. That is a pointer no
+other prompt gives, so for that fixture the agent was partly told where to
+look. Excluding it the split is 17/18 against 0/2, p=0.016: the direction
+holds and strengthens, but the exemplar cell is then two trials. Most of the
+agents that found a good example had been aimed at it.
 
 The gate is flat across that split, and the transcripts say why. Of the 22
 trials where an edit was refused, 10 never read a compliant example at any
