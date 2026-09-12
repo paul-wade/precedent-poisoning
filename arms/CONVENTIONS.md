@@ -42,3 +42,12 @@ Do not throw to express an expected failure in `src/services`. A function that
 can fail should return its failure through the helpers in `src/kernel/result.ts`,
 so the caller decides whether to recover. See `src/invoices/invoice-issuer.ts`
 and `src/payments/payment-processor.ts` for the pattern.
+
+## Error taxonomy
+
+Do not hard-code an HTTP status in a service response. A failure that has to
+become a response is expressed as an `AppError` and mapped to its status through
+the `statusFor` map, which keeps the status for each code in one place. The
+`AppError` type, `missingResource` helper and `statusFor` map live in
+`src/kernel/errors.ts`; see `src/invoices/invoices.controller.ts` and
+`src/payments/payments.controller.ts` for the pattern.
