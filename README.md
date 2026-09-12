@@ -1,8 +1,8 @@
 # Precedent poisoning
 
-An agent asked to add a file to an existing codebase copies what the codebase
-already does, including the parts it does wrong. This measures how often, and
-what stops it.
+Coding agents copy patterns from the files they read. This harness seeds a
+shortcut in one file, asks for a sibling file, and counts how often the
+shortcut is copied under four setups.
 
 Seven tasks, each asking for a sibling of a file that already takes a
 shortcut. No task names the shortcut or the correct form. Four environments:
@@ -10,23 +10,9 @@ the repository alone, plus a conventions file, plus a lint gate that reads
 each edit before it lands, plus the same linter reporting after the write.
 140 trials.
 
-Ungated, the agent copied the seeded shortcut in 30 of 35 trials. A
-conventions file took that to 13 of 35, and its effect ranged from complete
-to none depending on the fixture. The two lint arms took it to 0 and 4 of 35.
-
-## Corrections
-
-Findings are versioned. Each is frozen when published; this page is the
-current summary.
-
-- [v2, 2026-09-12](findings/2026-09-12-v2.md) — 140 trials, seven fixtures.
-- [v1, 2026-09-11](findings/2026-09-11-v1.md) — 75 trials, five fixtures.
-  **Superseded.**
-
-v2 retracts v1's claim that a conventions file cannot move a rule true only
-in this repository. v1 drew that from one fixture. With three, it does move
-them, as much as it moves generic rules. v2 also weakens v1's read-path
-result and reverses its cost finding.
+With no help the agent copied the shortcut in 30 of 35 trials. A conventions
+file brought that to 13 of 35, though it worked much better on some fixtures
+than others. The two lint arms brought it to 0 and 4 of 35.
 
 ## Running it
 
@@ -44,12 +30,12 @@ node analyse.mjs runs/<dir>
 
 ## Method
 
-A fixture is a task plus a seeded shortcut. Each names a feature and nothing
-else; the file that already takes the shortcut is discoverable, and so is a
-compliant alternative, but neither is named.
+A fixture is a task plus a seeded shortcut. The task describes a feature. The
+file that already takes the shortcut is somewhere the agent can find it, and
+so is a file doing the same job correctly. The task text mentions neither.
 
-An arm is an environment, not a differently worded prompt. Every trial in
-every arm receives the same task text.
+The arms are environments. Every trial in every arm gets the same task text,
+so nothing here depends on prompt wording.
 
 - `none` — the repository, unmodified.
 - `docs` — a `CLAUDE.md` stating the conventions, including every rule the
@@ -64,8 +50,8 @@ every arm receives the same task text.
 Every trial starts from the same commit on its own branch and asserts a clean
 tree first. A trial counts as a copy if its diff introduces a finding
 matching the fixture's declared rule; the any-finding rate is recorded
-separately. Seeded findings are subtracted, so a trial is never charged for a
-shortcut it did not write. Trials that read the harness are excluded and
+separately. Findings that were already in the tree are subtracted, so a trial is only
+counted for what it wrote itself. Trials that read the harness are excluded and
 reported.
 
 A fixture must pass five checks before it counts: the rule fires on the seed,
@@ -110,27 +96,29 @@ first write:
 
 ## Discussion
 
-Inference, not measurement. The tables above stand without it.
+This section is interpretation. The results above do not depend on it.
 
-The `docs` column reads 0, 0, 5, 3, 4, 1, 0. The `eslint` column is zero
-seven times. Documentation's effect varies by fixture from complete to none;
-enforcement does not vary. Same rules, same repository, same model — the
-difference is whether a rule is checked or only written down.
+Across the seven fixtures the `docs` arm scored 0, 0, 5, 3, 4, 1 and 0. The
+`eslint` arm scored 0 on all seven. Both arms use the same rules, in the same
+repository, with the same model. One writes the rules down and the other
+checks them.
 
-Where the document fails, the task itself argues for the shortcut.
-`exports-summary` hands the agent a request body and a literal response
-shape, so `any` is close to forced. `schedule-run` needs the current time and
-`new Date()` is the obvious route. In `refund-order` and `not-found` the
-compliant path is an API call and nothing pushes against it. This fits all
-seven fixtures; the local-versus-generic distinction fits four, which is why
-v1's claim was withdrawn. It is a hypothesis formed after seeing the data.
+The two fixtures the conventions file did not move have something in common:
+the task makes the shortcut the obvious implementation. `exports-summary`
+gives the agent a request body and a literal response shape, so `any` is
+close to forced. `schedule-run` needs the current time, and `new Date()` is
+the first thing most code reaches for. In `refund-order` and `not-found` the
+compliant path is a function call and nothing in the task discourages it.
+That pattern covers all seven fixtures. Sorting them by whether the rule is
+repository-specific covers four, which is why v1's claim was withdrawn. We
+noticed this after seeing the results and have not tested it.
 
-Reading a compliant example is associated with copying less often, and does
-not prevent it: seven of eleven trials that found one copied anyway.
+Trials that read a compliant example copied the shortcut less often, but
+plenty still did: 7 of the 11 that found one copied anyway.
 
-`eslint` and `lint-after` are indistinguishable on outcome here (p=0.114),
-and blocking before the write is not more expensive than reporting after it.
-Both cost about two turns more than doing nothing.
+`eslint` and `lint-after` cannot be told apart at this sample size
+(p=0.114). Checking before the write was not more expensive than reporting
+after it. Both arms took about two more turns than doing nothing.
 
 ## Threats to validity
 
@@ -149,8 +137,8 @@ repository, seven fixtures. Sampling is not deterministic and no seed is
 exposed; a rerun will not match.
 
 **Statistical.** Five repetitions per cell. Pooled arms are 35 trials. The
-repository-local read-path row has three trials in its exemplar cell and
-supports nothing.
+repository-local row of the read-path table has three trials in one cell,
+which is too few to draw anything from.
 
 ## Fixtures that were cut
 
@@ -161,14 +149,14 @@ Eight were built and three cut, all in the git history.
   threw in the new file. The second ended "Return the response the codebase
   uses…", which told the agent a convention existed and to go find it;
   removing that clause moved it from 1/5 to 4/5.
-- **`customer-orders`** was cut after three attempts. It scored 4/5 on the
-  first because its compliant answer did not compile — it measured an
-  impossible convention rather than a hard one. That is why the third check
-  exists.
+- **`customer-orders`** was cut after three attempts. Its first version
+  scored 4/5 only because the compliant answer did not compile, so agents had
+  no way to get it right. The third check exists because of this fixture.
 
-Seven checks in this project have run green while measuring nothing,
-including the one added to catch that class, which wrote its probe to a
-dotfile TypeScript never compiled. Each was found by trying to make it fail.
+Seven checks in this project reported success while testing nothing. That
+includes the check added to catch this exact problem: it wrote its probe to a
+dotfile, which TypeScript does not compile. All seven were found by
+deliberately breaking them rather than by reading the code.
 
 ## Environment
 
@@ -181,8 +169,9 @@ dotfile TypeScript never compiled. Each was found by trying to make it fail.
 | TypeScript | 5.9.3 |
 | OS | Windows 11 |
 
-The Claude Code version matters most: both lint arms depend on hook exit 2
-semantics, and if those change the arms change with them.
+The Claude Code version is the one to watch. Both lint arms rely on a hook
+exiting 2 to refuse or report an edit, and that behaviour belongs to a
+particular build.
 
 ## Layout
 
@@ -205,9 +194,23 @@ literature on language models of code ([Allamanis et al.,
 2018](https://arxiv.org/abs/1709.06182)). Linting an agent's proposed edit
 from a hook is a common setup that predates this repository.
 
-What we have not found measured elsewhere is the comparison this run makes
-directly: the same rule set, written down versus enforced, on the same tasks
-in the same repository.
+We have not found a published comparison of the same rule set written down
+against the same rule set enforced, on the same tasks in the same
+repository. That is what this run does.
+
+## Revisions
+
+Findings are versioned. Each is frozen when published; this page is the
+current summary.
+
+- [v2, 2026-09-12](findings/2026-09-12-v2.md) — 140 trials, seven fixtures.
+- [v1, 2026-09-11](findings/2026-09-11-v1.md) — 75 trials, five fixtures.
+  **Superseded.**
+
+v2 retracts v1's claim that a conventions file cannot move a rule true only
+in this repository. v1 drew that from one fixture. With three, it does move
+them, as much as it moves generic rules. v2 also weakens v1's read-path
+result and reverses its cost finding.
 
 ## Citation
 
