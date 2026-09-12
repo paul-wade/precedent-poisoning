@@ -5,9 +5,13 @@ Ungated, it copies the shortcut in 20 of 25 trials.
 
 What changes that is mostly what the agent read first. Of the 18 trials that
 read no compliant example before writing, 17 copied the shortcut. Of the 7
-that read one, 3 did. A conventions file naming the shortcut takes the
-fixtures it covers from 16 of 20 to 5 of 20. A lint gate that reads each edit
-before it lands takes every fixture to 0 of 25.
+that read one, 3 did.
+
+Writing the conventions down works, for the rules the model already holds:
+16 of 20 becomes 3 of 20. It does nothing for the one rule that is true only
+in this repository, and the document states that rule explicitly: 4 of 5
+becomes 5 of 5. A lint gate that reads each edit before it lands takes every
+fixture to 0 of 25.
 
 Five tasks. Each asks for a sibling of a file that already takes a shortcut.
 No task names the shortcut and no task names the correct form. Three
@@ -26,19 +30,26 @@ node analyse.mjs runs/<dir>
 `--dry-run` prints the matrix and every prompt without running anything.
 `node validate-fixtures.mjs` checks the fixtures still hold.
 
-The run in `runs/2026-09-11` is the one this page reports.
-`node analyse.mjs runs/2026-09-11` reproduces every table here.
+Two runs back this page. `runs/2026-09-11` is the three-arm matrix.
+`runs/2026-09-11-docs-v2` re-runs the `docs` arm alone against a corrected
+conventions file, and is the source of every `docs` number here. Run
+`node analyse.mjs` against either to reproduce its tables.
 
 ## Results
 
 | arm | environment | wrote the shortcut | 95% CI | edits refused |
 |---|---|---|---|---|
 | `none` | repository as-is | 20 / 25 (80%) | 61-91% | 0 |
-| `docs` | plus a `CLAUDE.md` of conventions | 9 / 25 (36%) | 20-55% | 0 |
+| `docs` | plus a `CLAUDE.md` of conventions | 8 / 25 (32%) | 17-52% | 0 |
 | `eslint` | plus a PreToolUse lint gate | 0 / 25 (0%) | 0-13% | 22 |
 
-All three differ. Fisher exact, two-sided: none vs docs p=0.004, docs vs
-eslint p=0.002, none vs eslint p<0.0001.
+All three differ. Fisher exact, two-sided: none vs docs p=0.001, docs vs
+eslint p=0.004, none vs eslint p<0.0001.
+
+`none` and `eslint` are from `runs/2026-09-11`. `docs` is from
+`runs/2026-09-11-docs-v2`, which re-ran that arm alone after the conventions
+file was corrected to state every rule it is scored on. Neither other arm
+reads that file. See below.
 
 Per fixture:
 
@@ -47,8 +58,8 @@ Per fixture:
 | `fetch-invoices` | `as` cast on parsed JSON | 3/5 | 0/5 | 0/5 |
 | `jwt-issuer` | `as string` on an env var | 3/5 | 0/5 | 0/5 |
 | `exports-summary` | `any` request body | 5/5 | 3/5 | 0/5 |
-| `customer-name` | `!` on a `find` result | 5/5 | 2/5 | 0/5 |
-| `schedule-run` | `new Date()` instead of a Clock | 4/5 | 4/5 | 0/5 |
+| `customer-name` | `!` on a `find` result | 5/5 | 0/5 | 0/5 |
+| `schedule-run` | `new Date()` instead of a Clock | 4/5 | 5/5 | 0/5 |
 
 Five reps per cell cannot separate most of these. 3/5 against 5/5 is p=0.44.
 Treat the per-fixture columns as descriptive and the pooled rows as the
@@ -64,8 +75,8 @@ Each trial records the files it read before its first write. Splitting the
 | no | 18 | 17 (94%) |
 | yes | 7 | 3 (43%) |
 
-p=0.012. The same split in the `docs` arm is 7/13 against 2/12, p=0.097,
-which is not significant at this sample size. In `eslint` it is 0/19 and 0/6.
+p=0.012. The same split in the `docs` arm is 3/10 against 5/15, which is
+not significant. In `eslint` it is 0/19 and 0/6.
 
 7 of 25 ungated trials found a compliant example. Nothing in the task points
 at one.
@@ -97,7 +108,7 @@ write the shortcut and stop, and nothing sends them back. A linter that
 reports the same errors after the write would pay a similar cost to fix
 them, and this run has no such arm to compare against.
 
-## A comparison this run cannot make
+## The rule the document could not move
 
 Four of the five shortcuts are things a linter already ships a rule for and
 the model already treats as wrong. `schedule-run` is not. It seeds
@@ -105,19 +116,31 @@ the model already treats as wrong. `schedule-run` is not. It seeds
 declared in `src/kernel/clock.ts` and used by two modules that are not next
 to the stale one.
 
-The obvious question is whether a conventions file helps less for a rule that
-is only true in one repository. This run does not answer it.
-`arms/CONVENTIONS.md` covers the other four fixtures and never mentions the
-clock, so the `docs` arm was never told the rule. That it did not move
-`schedule-run` at all (4/5 either way) is what a document that omits the rule
-would do, and says nothing about local conventions.
+The first version of `arms/CONVENTIONS.md` did not mention the clock at all,
+so the `docs` arm in `runs/2026-09-11` was scored on a rule it had never been
+told. The document now states it, naming the interface, the factory and two
+modules that use them, in the same shape as the four sections that work.
+`runs/2026-09-11-docs-v2` is that arm re-run, 25 trials, nothing else
+changed.
 
-The `docs` numbers elsewhere on this page are therefore over four fixtures,
-not five: 16/20 to 5/20, p=0.001.
+| | ungated | with the document |
+|---|---|---|
+| the four rules the model already holds | 16 / 20 | **3 / 20** |
+| the clock rule, true only here | 4 / 5 | **5 / 5** |
 
-An earlier version of this page claimed the opposite, and claimed the clock
-rule was in the document. It was not. Adding it and rerunning the `docs` arm
-is the next thing to do.
+Writing it down did nothing: p=1.0. Inside the corrected arm, 3/20 against
+5/5 is p=0.001.
+
+A conventions file moves the rules a model already believes and does not move
+one that is only true in your repository, even when the file says so.
+
+Two limits. This is one local rule in one repository, so it is one data
+point about a class, not a measurement of the class. And 5/5 against 4/5 is
+noise on its own; the weight is in the contrast with 3/20, not in the change
+to `schedule-run`.
+
+`customer-name` moved 2/5 to 0/5 between two runs with identical wording for
+that rule, which is the sampling variance to expect at five reps.
 
 ## What this doesn't show
 
@@ -131,10 +154,9 @@ is the next thing to do.
   effect rather than strengthen it. That is an argument, not a measurement.
 - Three of the five tasks edit the file that seeds the shortcut, so the agent
   necessarily sees it. Two do not.
-- Only `schedule-run` seeds a convention local to this repository, and the
-  conventions file does not mention it, so the `docs` arm covers four
-  fixtures rather than five. The three other fixtures built to test local
-  conventions were cut.
+- Only `schedule-run` seeds a convention local to this repository, so the
+  claim that a document cannot move such a rule rests on one fixture. The
+  three others built to test that case were cut.
 - Sampling is not deterministic and no seed is exposed. Rerunning gives
   different numbers. The committed run is the evidence for the tables here;
   yours will not match it exactly.
