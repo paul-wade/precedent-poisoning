@@ -8,3 +8,12 @@ runs/
 # Installed by the arms, one at a time, and removed between trials.
 .claude/
 CLAUDE.md
+
+# Notes from whoever is driving the runs. Working material, not results;
+# two of these were committed by accident and had to be taken back out.
+.cyv-review/
+checkyourvibe.json
+
+# Written by validate-fixtures while it typechecks a probe, and removed again.
+# Listed so a crash mid-check cannot leave it in a commit.
+src/validate-probe.generated.ts
