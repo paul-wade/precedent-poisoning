@@ -10,6 +10,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FIXTURES } from './run.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const dir = process.argv[2] ?? join(root, 'runs', 'local');
@@ -28,26 +29,49 @@ const rows = readFileSync(path, 'utf-8')
 const arms = [...new Set(rows.map((r) => r.arm))];
 const fixtures = [...new Set(rows.map((r) => r.fixture))];
 
+const ruleByFixture = new Map(FIXTURES.map((f) => [f.id, f.rule]));
+
+/** Findings on this trial that match the fixture's declared rule. */
+function ruleFindingsFor(row) {
+  if (Array.isArray(row.ruleLint)) return row.ruleLint;
+  const rule = ruleByFixture.get(row.fixture);
+  return rule ? (row.lint ?? []).filter((f) => f.rule === rule) : [];
+}
+
 const cell = (subset) => {
   const n = subset.length;
   const violated = subset.filter((r) => (r.lint ?? []).length > 0).length;
+  const ruleViolated = subset.filter((r) => ruleFindingsFor(r).length > 0).length;
   const denied = subset.filter((r) => (r.denials ?? 0) > 0).length;
-  return { n, violated, denied };
+  return { n, violated, ruleViolated, denied };
 };
 
 console.log(`\n${rows.length} trials from ${path}\n`);
 
-console.log('| arm | n | wrote the shortcut | trials with a gate denial | typecheck failed |');
-console.log('|---|---|---|---|---|');
+console.log('| arm | n | declared-rule rate | any-finding rate | trials with a gate denial | typecheck failed |');
+console.log('|---|---|---|---|---|---|');
 for (const arm of arms) {
   const subset = rows.filter((r) => r.arm === arm);
-  const { n, violated, denied } = cell(subset);
+  const { n, violated, ruleViolated, denied } = cell(subset);
   const broke = subset.filter((r) => r.typecheck === false).length;
-  console.log(`| ${arm} | ${n} | ${violated} / ${n} | ${denied} / ${n} | ${broke} |`);
+  console.log(
+    `| ${arm} | ${n} | ${ruleViolated} / ${n} | ${violated} / ${n} | ${denied} / ${n} | ${broke} |`,
+  );
 }
 
-console.log('\nPer fixture — a fixture every arm gets right is not measuring anything.\n');
+console.log('\nDeclared-rule rate per fixture\n');
 const fixtureHeader = ['| fixture |', ...arms.map((a) => ` ${a} |`)].join('');
+console.log(fixtureHeader);
+console.log(['|---|', ...arms.map(() => '---|')].join(''));
+for (const fixture of fixtures) {
+  const cells = arms.map((arm) => {
+    const { n, ruleViolated } = cell(rows.filter((r) => r.arm === arm && r.fixture === fixture));
+    return ` ${ruleViolated} / ${n} |`;
+  });
+  console.log([`| ${fixture} |`, ...cells].join(''));
+}
+
+console.log('\nAny-finding rate per fixture\n');
 console.log(fixtureHeader);
 console.log(['|---|', ...arms.map(() => '---|')].join(''));
 for (const fixture of fixtures) {
@@ -64,22 +88,25 @@ const contaminatedCount = rows.length - cleanRows.length;
 const fmtArm = (s) => ' ' + s.padEnd(7);
 const fmtRead = (s) => ' ' + s.padEnd(25);
 const fmtN = (s) => ' ' + String(s).padStart(2, ' ') + ' ';
-const fmtWrote = (s) => ' ' + s.padEnd(19);
-const splitRow = (a, b, c, d) =>
-  `|${fmtArm(a)}|${fmtRead(b)}|${fmtN(c)}|${fmtWrote(d)}|`;
+const fmtDeclared = (s) => ' ' + s.padEnd(19);
+const fmtAny = (s) => ' ' + s.padEnd(19);
+const splitRow = (a, b, c, d, e) =>
+  `|${fmtArm(a)}|${fmtRead(b)}|${fmtN(c)}|${fmtDeclared(d)}|${fmtAny(e)}|`;
 
-console.log('\n' + splitRow('arm', 'read a compliant example', 'n', 'wrote the shortcut'));
-console.log('|---|---|---|---|');
+console.log('\n' + splitRow('arm', 'read a compliant example', 'n', 'wrote declared rule', 'wrote any finding'));
+console.log('|---|---|---|---|---|');
 for (const arm of arms) {
   for (const readExemplar of [false, true]) {
     const subset = cleanRows.filter(
       (r) => r.arm === arm && r.readPatterns.includes('exemplar') === readExemplar,
     );
     const n = subset.length;
-    const wrote = subset.filter((r) => (r.lint ?? []).length > 0).length;
+    const wroteDeclared = subset.filter((r) => ruleFindingsFor(r).length > 0).length;
+    const wroteAny = subset.filter((r) => (r.lint ?? []).length > 0).length;
     const answer = readExemplar ? 'yes' : 'no';
-    const wroteStr = String(wrote).padStart(2, ' ') + ' / ' + n;
-    console.log(splitRow(arm, answer, n, wroteStr));
+    const wroteDeclaredStr = String(wroteDeclared).padStart(2, ' ') + ' / ' + n;
+    const wroteAnyStr = String(wroteAny).padStart(2, ' ') + ' / ' + n;
+    console.log(splitRow(arm, answer, n, wroteDeclaredStr, wroteAnyStr));
   }
 }
 console.log(`\n${contaminatedCount} contaminated.`);
