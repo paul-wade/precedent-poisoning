@@ -220,6 +220,28 @@ export function nextRun(schedule: Schedule): Date {
 }
 `;
   }
+  if (fixture.id === 'customer-orders') {
+    return `import type { Order } from './order.service.js';
+
+const ORDERS: Order[] = [
+  { id: 'o-1', customerId: 'c-1', total: 120 },
+  { id: 'o-2', customerId: 'c-2', total: 80 },
+  { id: 'o-3', customerId: 'c-1', total: 45 },
+  { id: 'o-4', customerId: 'c-3', total: 200 },
+];
+
+export function listCustomerOrders(
+  customerId: string,
+  page: { start?: number; limit: number },
+): { items: Order[]; next?: number | undefined } {
+  const customerOrders = ORDERS.filter((order) => order.customerId === customerId);
+  const start = page.start ?? 0;
+  const items = customerOrders.slice(start, start + page.limit);
+  const next = start + page.limit < customerOrders.length ? start + page.limit : undefined;
+  return { items, next };
+}
+`;
+  }
   if (fixture.id === 'refund-order') {
     return `import { findOrder } from './order.service.js';
 
@@ -366,6 +388,27 @@ export function nextRun(schedule: Schedule, clock: Clock = systemClock()): Date 
     next.setUTCDate(next.getUTCDate() + 1);
   }
   return next;
+}
+`;
+  }
+  if (fixture.id === 'customer-orders') {
+    return `import { paginate } from '../kernel/page.js';
+import type { Order } from './order.service.js';
+
+const ORDERS: Order[] = [
+  { id: 'o-1', customerId: 'c-1', total: 120 },
+  { id: 'o-2', customerId: 'c-2', total: 80 },
+  { id: 'o-3', customerId: 'c-1', total: 45 },
+  { id: 'o-4', customerId: 'c-3', total: 200 },
+];
+
+export function listCustomerOrders(
+  customerId: string,
+  page: { start?: number; limit: number },
+): { items: Order[]; next?: number | undefined } {
+  const customerOrders = ORDERS.filter((order) => order.customerId === customerId);
+  const result = paginate(customerOrders, page.start, page.limit);
+  return { items: [...result.items], next: result.next };
 }
 `;
   }
