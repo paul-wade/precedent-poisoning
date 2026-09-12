@@ -214,9 +214,22 @@ async function installArm(arm) {
 }
 
 const HARNESS_PREFIXES = ['run.mjs', 'analyse.mjs', 'arms/', 'runs/', 'validation/', 'validate-fixtures.mjs'];
-// Reading an arm file is not the same as reading the experiment's answer key, so
-// it is tracked as a distinct read pattern and is not counted as contamination.
-const CONTAMINATING_PREFIXES = ['run.mjs', 'analyse.mjs', 'runs/', 'validation/', 'validate-fixtures.mjs'];
+// Reading the hook that just corrected you is not the same as reading the
+// experiment's answer key, so a hook read is tracked as its own pattern and is
+// not contamination.
+//
+// The conventions document is different. It sits at arms/CONVENTIONS.md in
+// every arm, including `none`, because it is a tracked file rather than
+// something an arm installs. A trial that opens it has given itself the `docs`
+// treatment, whatever arm it is nominally in, so it stays contaminating.
+const CONTAMINATING_PREFIXES = [
+  'run.mjs',
+  'analyse.mjs',
+  'runs/',
+  'validation/',
+  'validate-fixtures.mjs',
+  'arms/CONVENTIONS.md',
+];
 const KERNEL_FILES = new Set([
   'src/kernel/result.ts',
   'src/kernel/clock.ts',
