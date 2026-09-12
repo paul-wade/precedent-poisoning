@@ -1,17 +1,13 @@
 # Precedent poisoning
 
-Writing your conventions down works for the rules the model already agrees
-with. For a convention that is only true in your repository, it does nothing.
-
 Give a coding agent a file that takes a shortcut and ask it for a sibling.
-Ungated, it copies the shortcut in 20 of 25 trials. Add a conventions file
-and the four shortcuts the model already treats as wrong fall from 16 of 20
-to 5 of 20. The one convention that exists only in this repository does not
-move at all: 4 in 5 either way. A lint gate that reads each edit before it
-lands takes all five to 0 of 25.
+Ungated, it copies the shortcut in 20 of 25 trials.
 
-The local-convention result is one fixture, p=0.040. Read it as a direction.
-Everything else here is 25 trials per arm.
+What changes that is mostly what the agent read first. Of the 18 trials that
+read no compliant example before writing, 17 copied the shortcut. Of the 7
+that read one, 3 did. A conventions file naming the shortcut takes the
+fixtures it covers from 16 of 20 to 5 of 20. A lint gate that reads each edit
+before it lands takes every fixture to 0 of 25.
 
 Five tasks. Each asks for a sibling of a file that already takes a shortcut.
 No task names the shortcut and no task names the correct form. Three
@@ -75,22 +71,27 @@ because the gate makes it irrelevant what the agent read.
 7 of 25 ungated trials found a compliant example. Nothing in the task points
 at one.
 
-## The convention that is only true here
+## A comparison this run cannot make
 
 Four of the five shortcuts are things a linter already ships a rule for and
 the model already treats as wrong. `schedule-run` is not. It seeds
 `new Date()` where this repository takes time from an injected `Clock`,
-declared in `src/kernel/clock.ts`, used by two modules that are not next to
-the stale one, and written down in the conventions file.
+declared in `src/kernel/clock.ts` and used by two modules that are not next
+to the stale one.
 
-The conventions file does not move it: 4/5 with, 4/5 without, p=1.0. On the
-other four it goes from 16/20 to 5/20, p=0.001. Comparing the two within the
-`docs` arm gives p=0.040.
+The obvious question is whether a conventions file helps less for a rule that
+is only true in one repository. This run does not answer it.
+`arms/CONVENTIONS.md` covers the other four fixtures and never mentions the
+clock, so the `docs` arm was never told the rule. That it did not move
+`schedule-run` at all (4/5 either way) is what a document that omits the rule
+would do, and says nothing about local conventions.
 
-One fixture, so this is a direction rather than a finding. It is the
-direction I expected. A document works when it reminds the model of
-something it already believes, and a convention that exists only in one
-repository is not something it already believes.
+The `docs` numbers elsewhere on this page are therefore over four fixtures,
+not five: 16/20 to 5/20, p=0.001.
+
+An earlier version of this page claimed the opposite, and claimed the clock
+rule was in the document. It was not. Adding it and rerunning the `docs` arm
+is the next thing to do.
 
 ## What this doesn't show
 
@@ -104,8 +105,10 @@ repository is not something it already believes.
   effect rather than strengthen it. That is an argument, not a measurement.
 - Three of the five tasks edit the file that seeds the shortcut, so the agent
   necessarily sees it. Two do not.
-- Only `schedule-run` seeds a convention local to this repository. The three
-  fixtures built to test that case were cut.
+- Only `schedule-run` seeds a convention local to this repository, and the
+  conventions file does not mention it, so the `docs` arm covers four
+  fixtures rather than five. The three other fixtures built to test local
+  conventions were cut.
 - Sampling is not deterministic and no seed is exposed. Rerunning gives
   different numbers. The committed run is the evidence for the tables here;
   yours will not match it exactly.
