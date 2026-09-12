@@ -65,11 +65,37 @@ Each trial records the files it read before its first write. Splitting the
 | yes | 7 | 3 (43%) |
 
 p=0.012. The same split in the `docs` arm is 7/13 against 2/12, p=0.097,
-which is not significant at this sample size. In `eslint` it is 0/19 and 0/6,
-because the gate makes it irrelevant what the agent read.
+which is not significant at this sample size. In `eslint` it is 0/19 and 0/6.
 
 7 of 25 ungated trials found a compliant example. Nothing in the task points
 at one.
+
+The gate is flat across that split, and the transcripts say why. Of the 22
+trials where an edit was refused, 10 never read a compliant example at any
+point and still produced clean code. 8 went looking only after the refusal,
+and 4 had already read one. The refusal text is enough on its own, so the
+gate does not depend on the agent finding the right file. That is the
+difference between it and the other two arms, where the outcome tracks what
+was read.
+
+## What it costs
+
+From the `result` event of each transcript, median per trial:
+
+| arm | turns | seconds | cost | output tokens |
+|---|---|---|---|---|
+| `none` | 4 | 20 | $0.051 | 1342 |
+| `docs` | 3 | 23 | $0.049 | 1493 |
+| `eslint` | 6 | 30 | $0.065 | 2198 |
+
+The gate is the most expensive arm, by about half again as many turns. Every
+refusal costs a retry.
+
+This is not a fair reading of what a gate costs in practice. `none` and
+`docs` are cheap here partly because they finish while still wrong: they
+write the shortcut and stop, and nothing sends them back. A linter that
+reports the same errors after the write would pay a similar cost to fix
+them, and this run has no such arm to compare against.
 
 ## A comparison this run cannot make
 
