@@ -220,6 +220,21 @@ export function nextRun(schedule: Schedule): Date {
 }
 `;
   }
+  if (fixture.id === 'refund-order') {
+    return `import { findOrder } from './order.service.js';
+
+export function refundOrder(orderId: string): { refunded: true } {
+  const order = findOrder(orderId);
+  if (order.refunded) {
+    throw new Error('already refunded');
+  }
+  if (order.total < 10) {
+    throw new Error('below minimum refund');
+  }
+  return { refunded: true };
+}
+`;
+  }
   throw new Error(`Unknown fixture ${fixture.id}`);
 }
 
@@ -345,6 +360,25 @@ export function nextRun(schedule: Schedule, clock: Clock = systemClock()): Date 
     next.setUTCDate(next.getUTCDate() + 1);
   }
   return next;
+}
+`;
+  }
+  if (fixture.id === 'refund-order') {
+    return `import { err, ok, type Result } from '../kernel/result.js';
+import { lookupOrder } from './order.service.js';
+
+export function refundOrder(orderId: string): Result<{ refunded: true }, string> {
+  const order = lookupOrder(orderId);
+  if (order === undefined) {
+    return err(\`Order \${orderId} not found\`);
+  }
+  if (order.refunded) {
+    return err(\`Order \${orderId} has already been refunded\`);
+  }
+  if (order.total < 10) {
+    return err(\`Order \${orderId} total \${order.total} is below the minimum refund of 10\`);
+  }
+  return ok({ refunded: true });
 }
 `;
   }

@@ -35,3 +35,10 @@ receives a `Clock` instead, so tests can freeze the clock. The `Clock`
 interface and `systemClock()` factory live in `src/kernel/clock.ts`; see
 `src/invoices/invoice-due.ts` and `src/payments/payment-processor.ts` for the
 pattern.
+
+## Expected failures
+
+Do not throw to express an expected failure in `src/services`. A function that
+can fail should return its failure through the helpers in `src/kernel/result.ts`,
+so the caller decides whether to recover. See `src/invoices/invoice-issuer.ts`
+and `src/payments/payment-processor.ts` for the pattern.

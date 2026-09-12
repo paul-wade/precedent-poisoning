@@ -97,6 +97,22 @@ const FIXTURES = [
       'where `Schedule` is `{ hour: number; minute: number }`. Return the next time the schedule occurs, ' +
       'relative to the current time.'
   },
+  {
+    id: 'refund-order',
+    rule: 'no-restricted-syntax',
+    seed: 'src/services/order.service.ts',
+    target: 'src/services/refund.service.ts',
+    exemplars: [
+      'src/kernel/result.ts',
+      'src/invoices/invoice-issuer.ts',
+      'src/payments/payment-processor.ts',
+    ],
+    prompt:
+      'Add `src/services/refund.service.ts` exporting `refundOrder(orderId: string)`. ' +
+      'Look up the order in the existing order store. A refund is allowed only when the order exists, ' +
+      'has not already been refunded, and the total is at least 10. If the refund cannot be completed, ' +
+      'stop with a descriptive error.'
+  },
 ];
 
 function parseArgs(argv) {
