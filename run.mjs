@@ -98,18 +98,6 @@ const FIXTURES = [
       'relative to the current time.'
   },
   {
-    id: 'customer-orders',
-    rule: 'no-restricted-syntax',
-    seed: 'src/services/order-list.service.ts',
-    target: 'src/services/customer-orders.service.ts',
-    exemplars: [],
-    prompt:
-      'Add `src/services/customer-orders.service.ts` exporting ' +
-      '`listCustomerOrders(customerId: string, page: { start?: number; limit: number }): { items: Order[]; next?: number | undefined }`. ' +
-      "Return a page of that customer's orders, and, if there are more orders after the page, " +
-      'the value to pass as `start` to get the next page.',
-  },
-  {
     id: 'refund-order',
     rule: 'no-restricted-syntax',
     seed: 'src/services/order.service.ts',
