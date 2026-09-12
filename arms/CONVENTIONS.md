@@ -27,3 +27,11 @@ which report a missing variable rather than returning an empty string.
 
 A response body from the network is unknown until it has been checked. See
 `src/lib/fetch-customers.ts` for the shape this codebase uses.
+
+## Time
+
+Do not call `new Date()` directly. A function that needs the current time
+receives a `Clock` instead, so tests can freeze the clock. The `Clock`
+interface and `systemClock()` factory live in `src/kernel/clock.ts`; see
+`src/invoices/invoice-due.ts` and `src/payments/payment-processor.ts` for the
+pattern.
