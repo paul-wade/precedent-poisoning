@@ -68,13 +68,20 @@ function lintMessagesWithoutBaseline(messages, baseline) {
   return fresh;
 }
 
+async function tscOutput() {
+  try {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [tscBin, '--noEmit'], {
+      cwd: root,
+      maxBuffer: 64 * 1024 * 64,
+    });
+    return { ok: true, stdout, stderr };
+  } catch (err) {
+    return { ok: false, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+  }
+}
+
 function runTypecheck() {
-  return execFileAsync(process.execPath, [tscBin, '--noEmit'], {
-    cwd: root,
-    maxBuffer: 64 * 1024 * 64,
-  })
-    .then(() => true)
-    .catch(() => false);
+  return tscOutput().then((result) => result.ok);
 }
 
 function runHook(target, content) {
@@ -119,6 +126,42 @@ async function withReferenceAtTarget(target, reference, fn) {
       await rm(absolute, { force: true });
     }
   }
+}
+
+const probePath = join(root, 'src', '.validate-probe.ts');
+
+async function withProbe(content, fn) {
+  const existed = existsSync(probePath);
+  const original = existed ? readFileSync(probePath, 'utf-8') : undefined;
+  const dir = dirname(probePath);
+  await mkdir(dir, { recursive: true });
+  await writeFile(probePath, content, 'utf-8');
+  try {
+    return await fn();
+  } finally {
+    if (existed) {
+      await writeFile(probePath, original, 'utf-8');
+    } else {
+      await rm(probePath, { force: true });
+    }
+  }
+}
+
+async function checkProbe(fixture) {
+  if (!fixture.probe) {
+    pass(fixture.id, 'probe');
+    return true;
+  }
+  const ok = await withProbe(fixture.probe, async () => {
+    const result = await tscOutput();
+    if (!result.ok) {
+      fail(fixture.id, 'probe', `probe does not typecheck:\n${result.stdout || result.stderr}`);
+      return false;
+    }
+    pass(fixture.id, 'probe');
+    return true;
+  });
+  return ok;
 }
 
 function shortcutContent(fixture) {
@@ -503,6 +546,7 @@ async function main() {
     console.log(`\n${fixture.id}`);
     const baselineMessages = await checkRuleFires(fixture);
     await checkGateFires(fixture);
+    await checkProbe(fixture);
     await checkReferenceClean(fixture, baselineMessages);
     await checkGatePermits(fixture);
   }

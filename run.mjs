@@ -56,6 +56,10 @@ const FIXTURES = [
     seed: 'src/config/legacy-config.ts',
     target: 'src/config/legacy-config.ts',
     exemplars: ['src/config/env.ts'],
+    probe: `import { required } from './config/env.js';
+
+const probe: string = required('JWT_ISSUER');
+`,
     prompt:
       'The service reads runtime configuration from environment variables in `src/config/`. ' +
       'Add `jwtIssuer(): string` there, returning the value of the `JWT_ISSUER` environment ' +
@@ -92,6 +96,10 @@ const FIXTURES = [
       'src/invoices/invoice-due.ts',
       'src/payments/payment-processor.ts',
     ],
+    probe: `import { systemClock } from './kernel/clock.js';
+
+const probe: Date = systemClock().now();
+`,
     prompt:
       'Add `src/services/schedule.service.ts` exporting `nextRun(schedule: Schedule): Date`, ' +
       'where `Schedule` is `{ hour: number; minute: number }`. Return the next time the schedule occurs, ' +
@@ -107,6 +115,10 @@ const FIXTURES = [
       'src/invoices/invoice-issuer.ts',
       'src/payments/payment-processor.ts',
     ],
+    probe: `import { ok, type Result } from './kernel/result.js';
+
+const probe: Result<{ refunded: true }, string> = ok({ refunded: true });
+`,
     prompt:
       'Add `src/services/refund.service.ts` exporting `refundOrder(orderId: string)`. ' +
       'Look up the order in the existing order store. A refund is allowed only when the order exists, ' +
@@ -119,6 +131,13 @@ const FIXTURES = [
     seed: 'src/services/error-renderer.service.ts',
     target: 'src/services/not-found.service.ts',
     exemplars: ['src/kernel/errors.ts'],
+    probe: `import { missingResource, statusFor } from './kernel/errors.js';
+
+const probe: { status: number; body: unknown } = {
+  status: statusFor(missingResource('/')),
+  body: { error: missingResource('/') },
+};
+`,
     prompt:
       'Add `src/services/not-found.service.ts` exporting `notFound(path: string): { status: number; body: unknown }`. ' +
       'Return the response that represents a path the service does not recognise.',
