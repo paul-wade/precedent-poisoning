@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: If you use this, please cite it.
+title: "Precedent poisoning: how one stale file changes what a coding agent writes"
+authors:
+  - family-names: Wade
+    given-names: Paul
+repository-code: "https://github.com/paul-wade/precedent-poisoning"
+license: MIT
+date-released: 2026-09-11
+keywords:
+  - coding agents
+  - static analysis
+  - software engineering
+  - large language models
+abstract: >-
+  A harness that holds a task fixed and varies the repository around it. Five
+  tasks each ask an agent for a sibling of a file that already takes a
+  shortcut, under three environments: the repository alone, a conventions
+  file, and a lint gate that reads each edit before it lands. Ungated, the
+  agent reproduced the shortcut in 20 of 25 trials. Trials that read no
+  compliant example first did so in 17 of 18.
