@@ -1,8 +1,17 @@
 # Precedent poisoning
 
-An agent asked to add a file to an existing codebase copies what the codebase
-already does, including the parts it does wrong. This measures how often, and
-what stops it.
+Writing your conventions down works for the rules the model already agrees
+with. For a convention that is only true in your repository, it does nothing.
+
+Give a coding agent a file that takes a shortcut and ask it for a sibling.
+Ungated, it copies the shortcut in 20 of 25 trials. Add a conventions file
+and the four shortcuts the model already treats as wrong fall from 16 of 20
+to 5 of 20. The one convention that exists only in this repository does not
+move at all: 4 in 5 either way. A lint gate that reads each edit before it
+lands takes all five to 0 of 25.
+
+The local-convention result is one fixture, p=0.040. Read it as a direction.
+Everything else here is 25 trials per arm.
 
 Five tasks. Each asks for a sibling of a file that already takes a shortcut.
 No task names the shortcut and no task names the correct form. Three
