@@ -113,6 +113,16 @@ const FIXTURES = [
       'has not already been refunded, and the total is at least 10. If the refund cannot be completed, ' +
       'stop with a descriptive error.'
   },
+  {
+    id: 'not-found',
+    rule: 'no-restricted-syntax',
+    seed: 'src/services/error-renderer.service.ts',
+    target: 'src/services/not-found.service.ts',
+    exemplars: ['src/kernel/errors.ts'],
+    prompt:
+      'Add `src/services/not-found.service.ts` exporting `notFound(path: string): { status: number; body: unknown }`. ' +
+      'Return the response that represents a path the service does not recognise.',
+  },
 ];
 
 function parseArgs(argv) {

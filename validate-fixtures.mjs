@@ -235,6 +235,12 @@ export function refundOrder(orderId: string): { refunded: true } {
 }
 `;
   }
+  if (fixture.id === 'not-found') {
+    return `export function notFound(path: string): { status: number; body: unknown } {
+  return { status: 404, body: { message: 'Missing: ' + path } };
+}
+`;
+  }
   throw new Error(`Unknown fixture ${fixture.id}`);
 }
 
@@ -379,6 +385,15 @@ export function refundOrder(orderId: string): Result<{ refunded: true }, string>
     return err(\`Order \${orderId} total \${order.total} is below the minimum refund of 10\`);
   }
   return ok({ refunded: true });
+}
+`;
+  }
+  if (fixture.id === 'not-found') {
+    return `import { missingResource, statusFor } from '../kernel/errors.js';
+
+export function notFound(path: string): { status: number; body: unknown } {
+  const error = missingResource(path);
+  return { status: statusFor(error), body: { error } };
 }
 `;
   }
