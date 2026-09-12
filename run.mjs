@@ -31,7 +31,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const execFileAsync = promisify(execFile);
 const root = dirname(fileURLToPath(import.meta.url));
 
-const ARMS = ['none', 'docs', 'eslint', 'cyv'];
+const ARMS = ['none', 'docs', 'eslint', 'cyv', 'lint-after'];
 
 /**
  * Each fixture names a feature and nothing else. `seed` is the file that
@@ -183,10 +183,18 @@ async function installArm(arm) {
     return;
   }
 
-  const command =
-    arm === 'eslint'
-      ? `node "${join(root, 'arms', 'eslint-hook.mjs')}"`
-      : 'cyv hook claude-code';
+  let command;
+  let hookEvent;
+  if (arm === 'eslint') {
+    command = `node "${join(root, 'arms', 'eslint-hook.mjs')}"`;
+    hookEvent = 'PreToolUse';
+  } else if (arm === 'lint-after') {
+    command = `node "${join(root, 'arms', 'eslint-post-hook.mjs')}"`;
+    hookEvent = 'PostToolUse';
+  } else {
+    command = 'cyv hook claude-code';
+    hookEvent = 'PreToolUse';
+  }
 
   await mkdir(join(root, '.claude'), { recursive: true });
   await writeFile(
@@ -194,7 +202,7 @@ async function installArm(arm) {
     JSON.stringify(
       {
         hooks: {
-          PreToolUse: [
+          [hookEvent]: [
             { matcher: 'Edit|Write|MultiEdit', hooks: [{ type: 'command', command }] },
           ],
         },
@@ -206,6 +214,9 @@ async function installArm(arm) {
 }
 
 const HARNESS_PREFIXES = ['run.mjs', 'analyse.mjs', 'arms/', 'runs/', 'validation/', 'validate-fixtures.mjs'];
+// Reading an arm file is not the same as reading the experiment's answer key, so
+// it is tracked as a distinct read pattern and is not counted as contamination.
+const CONTAMINATING_PREFIXES = ['run.mjs', 'analyse.mjs', 'runs/', 'validation/', 'validate-fixtures.mjs'];
 const KERNEL_FILES = new Set([
   'src/kernel/result.ts',
   'src/kernel/clock.ts',
@@ -231,7 +242,8 @@ function patternsForRead(file, fixture) {
     patterns.add('caller');
     patterns.add('exemplar');
   }
-  if (HARNESS_PREFIXES.some((p) => normalised === p || normalised.startsWith(p))) patterns.add('harness');
+  if (CONTAMINATING_PREFIXES.some((p) => normalised === p || normalised.startsWith(p))) patterns.add('harness');
+  if (normalised === 'arms/' || normalised.startsWith('arms/')) patterns.add('arm');
   if (patterns.size === 0) patterns.add('nothing');
   return [...patterns];
 }
@@ -272,11 +284,20 @@ function readTranscript(stdout, fixture) {
     }
   }
 
+  // PostToolUse feedback is appended to the transcript after the write has
+  // already succeeded. Its stderr may surface inside or outside a tool_result
+  // block, so also scan the raw stdout.
+  const postMatches = stdout.match(
+    /PostToolUse:(?:Edit|Write|MultiEdit) hook (?:blocking )?error/g,
+  ) || [];
+  for (const _ of postMatches) denials.push('Write');
+
   const readPatterns = [...new Set(reads.flatMap((file) => patternsForRead(file, fixture)))];
   const contaminated = readPatterns.includes('harness');
 
   return {
     denials: denials.length,
+    lintAfterCapHit: stdout.includes('CAP_HIT:'),
     readsBeforeFirstWrite: reads,
     readPatterns,
     contaminated,
@@ -429,12 +450,12 @@ async function main() {
   const rows = (await readFile(trialsPath, 'utf-8'))
     .split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l));
   for (const arm of options.arms) {
-    if (arm !== 'eslint' && arm !== 'cyv') continue;
+    if (arm !== 'eslint' && arm !== 'cyv' && arm !== 'lint-after') continue;
     const armRows = rows.filter((r) => r.arm === arm);
-    const denials = armRows.reduce((sum, r) => sum + (r.denials ?? 0), 0);
-    if (armRows.length > 0 && denials === 0) {
+    const fired = armRows.reduce((sum, r) => sum + (r.denials ?? 0), 0);
+    if (armRows.length > 0 && fired === 0) {
       console.error(
-        `\nWARNING: the ${arm} arm ran ${armRows.length} trial(s) and never denied a write. ` +
+        `\nWARNING: the ${arm} arm ran ${armRows.length} trial(s) and the gate never fired. ` +
           'Treat its numbers as untested until the hook is shown to fire.',
       );
     }

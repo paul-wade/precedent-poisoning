@@ -111,6 +111,11 @@ for (const arm of arms) {
 }
 console.log(`\n${contaminatedCount} contaminated.`);
 
+const armReads = rows.filter((r) => r.readPatterns?.includes('arm')).length;
+if (armReads > 0) {
+  console.log(`${armReads} trial(s) read an arm file (arms/); this is not counted as contamination.`);
+}
+
 const errored = rows.filter((r) => r.error || r.agentError);
 if (errored.length > 0) {
   console.log(`\n${errored.length} trial(s) reported an error:`);
@@ -120,12 +125,18 @@ if (errored.length > 0) {
 }
 
 for (const arm of arms) {
-  if (arm !== 'eslint' && arm !== 'cyv') continue;
+  if (arm !== 'eslint' && arm !== 'cyv' && arm !== 'lint-after') continue;
   const subset = rows.filter((r) => r.arm === arm);
   if (subset.length > 0 && subset.every((r) => (r.denials ?? 0) === 0)) {
+    const verb = arm === 'lint-after' ? 'reported a finding' : 'denied a write';
     console.log(
-      `\nWARNING: the ${arm} arm never denied a write. Its numbers are untested — ` +
+      `\nWARNING: the ${arm} arm never ${verb}. Its numbers are untested — ` +
         'a gate that cannot fire scores like a gate that works.',
     );
   }
+}
+
+const capHits = rows.filter((r) => r.lintAfterCapHit).length;
+if (capHits > 0) {
+  console.log(`\n${capHits} lint-after trial(s) hit the 5-report cap.`);
 }
