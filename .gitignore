@@ -1,0 +1,10 @@
+node_modules/
+
+# Run output. A published run is added explicitly with `git add -f`, so a
+# working directory full of local trials never makes the tree dirty — which
+# would abort every trial, since a run verifies its tree is clean before each.
+runs/
+
+# Installed by the arms, one at a time, and removed between trials.
+.claude/
+CLAUDE.md

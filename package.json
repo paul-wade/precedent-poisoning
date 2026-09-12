@@ -1,0 +1,20 @@
+{
+  "name": "precedent-poisoning",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hold the task fixed and vary the repository: how one stale file changes what a coding agent writes.",
+  "license": "MIT",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "run-trials": "node run.mjs",
+    "analyse": "node analyse.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0"
+  }
+}
