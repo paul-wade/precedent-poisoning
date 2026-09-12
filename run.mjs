@@ -403,6 +403,7 @@ async function main() {
           // the seeded file itself, so counting every finding in a changed
           // file would score the seeded shortcut as the agent's own.
           record.lint = subtractBaseline(await lintFindings(record.changedFiles), baseline);
+          record.ruleLint = record.lint.filter((f) => f.rule === fixture.rule);
           record.typecheck = await typechecks();
         } catch (err) {
           record.error = String(err?.message ?? err).slice(0, 400);
