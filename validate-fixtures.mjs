@@ -128,7 +128,10 @@ async function withReferenceAtTarget(target, reference, fn) {
   }
 }
 
-const probePath = join(root, 'src', '.validate-probe.ts');
+// Not a dotfile. TypeScript's `include` globs skip names beginning with a dot,
+// so a probe at src/.validate-probe.ts is never compiled: tsc exits 0 having
+// read nothing, and the check passes whatever the probe says.
+const probePath = join(root, 'src', 'validate-probe.generated.ts');
 
 async function withProbe(content, fn) {
   const existed = existsSync(probePath);
