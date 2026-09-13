@@ -1,5 +1,7 @@
 # Precedent poisoning
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22732965.svg)](https://doi.org/10.5281/zenodo.22732965)
+
 Coding agents copy patterns from the files they read. This harness seeds a
 shortcut in one file, asks for a sibling file, and counts how often the
 shortcut is copied under four setups.
@@ -216,11 +218,17 @@ result and reverses its cost finding.
 
 ```bibtex
 @software{wade_precedent_poisoning_2026,
-  author = {Wade, Paul},
-  title  = {Precedent poisoning: how one stale file changes what a coding agent writes},
-  year   = {2026},
-  url    = {https://github.com/paul-wade/precedent-poisoning}
+  author  = {Wade, Paul},
+  title   = {Precedent poisoning: how one stale file changes what a coding agent writes},
+  year    = {2026},
+  doi     = {10.5281/zenodo.22732965},
+  url     = {https://github.com/paul-wade/precedent-poisoning},
+  version = {v2.0.0}
 }
 ```
+
+`10.5281/zenodo.22732965` always resolves to the most recent release. To cite
+the findings this page reports, and not whatever supersedes them, use the
+release DOI `10.5281/zenodo.22732966`.
 
 MIT licensed.

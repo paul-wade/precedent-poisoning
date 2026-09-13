@@ -6,16 +6,22 @@ authors:
     given-names: Paul
 repository-code: "https://github.com/paul-wade/precedent-poisoning"
 license: MIT
-date-released: 2026-09-11
+version: v2.0.0
+date-released: 2026-09-12
+doi: 10.5281/zenodo.22732965
 keywords:
   - coding agents
   - static analysis
   - software engineering
   - large language models
 abstract: >-
-  A harness that holds a task fixed and varies the repository around it. Five
+  A harness that holds a task fixed and varies the repository around it. Seven
   tasks each ask an agent for a sibling of a file that already takes a
-  shortcut, under three environments: the repository alone, a conventions
-  file, and a lint gate that reads each edit before it lands. Ungated, the
-  agent reproduced the shortcut in 20 of 25 trials. Trials that read no
-  compliant example first did so in 17 of 18.
+  shortcut, under four environments: the repository alone, a conventions file,
+  a lint gate that reads each edit before it lands, and the same linter
+  reporting after the write. Across 140 trials the agent copied the seeded
+  shortcut in 30 of 35 ungated trials, 13 of 35 with the conventions file, and
+  0 and 4 of 35 under the two lint arms. The conventions file scored anywhere
+  from 0 to 5 out of 5 depending on the fixture; the pre-write gate scored 0
+  on all seven. An earlier version of these findings, reported from five
+  fixtures, is retained in findings/ and is superseded.
