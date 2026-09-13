@@ -205,6 +205,7 @@ repository. That is what this run does.
 Findings are versioned. Each is frozen when published; this page is the
 current summary.
 
+- [Planned next](findings/next-planned.md) — written before the trials run.
 - [v2, 2026-09-12](findings/2026-09-12-v2.md) — 140 trials, seven fixtures.
 - [v1, 2026-09-11](findings/2026-09-11-v1.md) — 75 trials, five fixtures.
   **Superseded.**
