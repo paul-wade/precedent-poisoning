@@ -1,5 +1,11 @@
 cff-version: 1.2.0
-message: If you use this, please cite it.
+message: >-
+  Findings are versioned and earlier ones are kept rather than edited. This
+  release reports v2, from 140 trials over seven fixtures. It supersedes v1,
+  which reported 75 trials over five and whose claim about repository-local
+  conventions did not survive the larger set; both are in findings/. Cite
+  10.5281/zenodo.22732965 for the latest version, or this release's own DOI
+  for these numbers specifically.
 title: "Precedent poisoning: how one stale file changes what a coding agent writes"
 authors:
   - family-names: Wade
